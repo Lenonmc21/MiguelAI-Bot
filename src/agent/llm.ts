@@ -2,7 +2,7 @@ import { config } from '../config.js';
 import { getDefinitions } from './tools.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+const MODEL = 'mixtral-8x7b-32768';
 
 export interface LLMResponse {
   message: {
@@ -18,12 +18,12 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     model: MODEL,
     messages,
     temperature: 0.7,
-    max_tokens: 2048,
+    max_tokens: 1024,
   };
 
-  // Solo agregar tools si existen
   if (tools.length > 0) {
     payload.tools = tools;
+    payload.tool_choice = "auto";
   }
 
   console.log(`[LLM] Enviando ${messages.length} mensajes a Groq (${MODEL})...`);
@@ -51,17 +51,7 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     return { message: { role: 'assistant', content: 'Error: no recibí respuesta del modelo.' } };
   }
 
-  // Si content está vacío, verificar si es respuesta de tool
-  if (!msg.content && msg.tool_calls) {
-    console.log('[LLM DEBUG] Respuesta con tool_calls pero sin content');
-    return { message: msg };
-  }
-
-  if (!msg.content || msg.content.trim() === '') {
-    console.log('[LLM DEBUG] Content vacío, forzando respuesta por defecto');
-    return { message: { role: 'assistant', content: 'Sí, te escucho y entiendo. ¿En qué puedo ayudarte?' } };
-  }
-
   console.log(`[LLM OK] Tokens: ${data.usage?.total_tokens || '?'}`);
+  console.log(`[LLM DEBUG] Raw:`, JSON.stringify(msg).substring(0, 200));
   return { message: msg };
 }
