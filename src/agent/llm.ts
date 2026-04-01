@@ -13,18 +13,14 @@ export interface LLMResponse {
 }
 
 export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
-  const tools = getDefinitions();
+  // No usamos tools por ahora
+  // const tools = getDefinitions();
   const payload: any = {
     model: MODEL,
     messages,
     temperature: 0.7,
-    max_tokens: 1024,
+    max_tokens: 2048,
   };
-
-  if (tools.length > 0) {
-    payload.tools = tools;
-    payload.tool_choice = "auto";
-  }
 
   console.log(`[LLM] Enviando ${messages.length} mensajes a Groq (${MODEL})...`);
 
