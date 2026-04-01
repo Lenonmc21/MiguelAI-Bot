@@ -2,7 +2,7 @@ import { config } from '../config.js';
 import { getDefinitions } from './tools.js';
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'mixtral-8x7b-32768';
+const MODEL = 'llama-3.3-70b-versatile';
 
 export interface LLMResponse {
   message: {
@@ -13,8 +13,7 @@ export interface LLMResponse {
 }
 
 export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
-  // No usamos tools por ahora
-  // const tools = getDefinitions();
+  // Sin tools por ahora
   const payload: any = {
     model: MODEL,
     messages,
@@ -48,6 +47,5 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   }
 
   console.log(`[LLM OK] Tokens: ${data.usage?.total_tokens || '?'}`);
-  console.log(`[LLM DEBUG] Raw:`, JSON.stringify(msg).substring(0, 200));
   return { message: msg };
 }
