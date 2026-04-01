@@ -12,6 +12,10 @@ if (getApps().length === 0) {
     if (cloudJson) {
       // NUBE: Credenciales como JSON en variable de entorno
       const serviceAccount = JSON.parse(cloudJson);
+      // Fix: Los \n de la clave privada se escapan al guardarla como env var
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
       initializeApp({ credential: cert(serviceAccount) });
       console.log('[DB] Firestore conectado via Secret de entorno ✅');
 
@@ -33,8 +37,13 @@ if (getApps().length === 0) {
   }
 }
 
-const db = getFirestore();
-db.settings({ ignoreUndefinedProperties: true });
+let db: FirebaseFirestore.Firestore | null = null;
+try {
+  db = getFirestore();
+  db.settings({ ignoreUndefinedProperties: true });
+} catch (e) {
+  console.warn('[DB] Firestore no disponible, el bot funcionará sin memoria.');
+}
 
 // ─── TIPOS ────────────────────────────────────────────────────────────────────
 export interface ChatMessage {
@@ -47,6 +56,7 @@ export interface ChatMessage {
 
 // ─── FUNCIONES ────────────────────────────────────────────────────────────────
 export async function addMessage(msg: ChatMessage): Promise<void> {
+  if (!db) return;
   try {
     await db
       .collection('conversations')
@@ -65,6 +75,7 @@ export async function addMessage(msg: ChatMessage): Promise<void> {
 }
 
 export async function getChatHistory(userId: number, limit = 50): Promise<any[]> {
+  if (!db) return [];
   try {
     const snapshot = await db
       .collection('conversations')
@@ -89,6 +100,7 @@ export async function getChatHistory(userId: number, limit = 50): Promise<any[]>
 }
 
 export async function clearHistory(userId: number): Promise<void> {
+  if (!db) return;
   try {
     const snap = await db
       .collection('conversations')
