@@ -3,6 +3,7 @@ import express from 'express';
 import { config } from './config.js';
 import { runAgentLoop } from './agent/loop.js';
 import { clearHistory } from './memory/db.js';
+import { transcribeAudio } from './agent/speech.js';
 
 // ─── IDENTIDAD HARDCODED ──────────────────────────────────────────────────────
 // Evita que el bot llame a api.telegram.org al iniciar (causa DNS Error en HF).
@@ -43,6 +44,51 @@ bot.on('message:text', async (ctx) => {
   } catch (error: any) {
     console.error('[ERROR]', error?.message || error);
     await ctx.reply('Ocurrió un error interno. Por favor intenta de nuevo.');
+  }
+});
+
+// ─── MANEJO DE AUDIO/VOZ ──────────────────────────────────────────────────────
+bot.on(['message:voice', 'message:audio'], async (ctx) => {
+  const userId = ctx.from.id;
+  const voice = ctx.message.voice || ctx.message.audio;
+
+  if (!voice) return;
+
+  console.log(`[AUDIO] De ${userId}: audio de ${voice.duration}s`);
+
+  try {
+    // 1. Obtener info del archivo
+    const fileInfo = await ctx.api.getFile(voice.file_id);
+
+    if (!fileInfo.file_path) {
+      await ctx.reply('No pude obtener el archivo de audio.');
+      return;
+    }
+
+    // 2. Descargar el archivo
+    const fileUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${fileInfo.file_path}`;
+    const fileResponse = await fetch(fileUrl);
+
+    if (!fileResponse.ok) {
+      await ctx.reply('Error al descargar el audio.');
+      return;
+    }
+
+    const fileBuffer = Buffer.from(await fileResponse.arrayBuffer());
+
+    // 3. Transcribir
+    await ctx.reply('🎧 Transcribiendo audio...');
+    const transcription = await transcribeAudio(fileBuffer, voice.mime_type);
+
+    console.log(`[AUDIO] Transcripción: "${transcription.substring(0, 100)}..."`);
+
+    // 4. Procesar con el agente
+    const finalResponse = await runAgentLoop(userId, transcription);
+    await ctx.reply(finalResponse);
+
+  } catch (error: any) {
+    console.error('[ERROR]', error?.message || error);
+    await ctx.reply('Ocurrió un error al procesar el audio. Por favor intenta de nuevo.');
   }
 });
 
