@@ -18,7 +18,7 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     model: MODEL,
     messages,
     temperature: 0.7,
-    max_tokens: 1024,
+    max_tokens: 2048,
   };
 
   // Solo agregar tools si existen
@@ -44,9 +44,6 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   }
 
   const data: any = await response.json();
-  
-  console.log(`[LLM DEBUG] Raw response:`, JSON.stringify(data).substring(0, 800));
-  
   const msg = data.choices?.[0]?.message;
 
   if (!msg) {
