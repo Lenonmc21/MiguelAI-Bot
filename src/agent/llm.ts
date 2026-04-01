@@ -21,9 +21,7 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     max_tokens: 1024,
   };
 
-  console.log(`[LLM DEBUG] Primer mensaje:`, JSON.stringify(messages[0]).substring(0, 300));
-  console.log(`[LLM DEBUG] Mensajes enviados:`, messages.length);
-
+  // Solo agregar tools si existen
   if (tools.length > 0) {
     payload.tools = tools;
   }
@@ -53,7 +51,17 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     return { message: { role: 'assistant', content: 'Error: no recibí respuesta del modelo.' } };
   }
 
+  // Si content está vacío, verificar si es respuesta de tool
+  if (!msg.content && msg.tool_calls) {
+    console.log('[LLM DEBUG] Respuesta con tool_calls pero sin content');
+    return { message: msg };
+  }
+
+  if (!msg.content || msg.content.trim() === '') {
+    console.log('[LLM DEBUG] Content vacío, forzando respuesta por defecto');
+    return { message: { role: 'assistant', content: 'Sí, te escucho y entiendo. ¿En qué puedo ayudarte?' } };
+  }
+
   console.log(`[LLM OK] Tokens: ${data.usage?.total_tokens || '?'}`);
-  console.log(`[LLM DEBUG] Respuesta completa:`, JSON.stringify(msg).substring(0, 500));
   return { message: msg };
 }
