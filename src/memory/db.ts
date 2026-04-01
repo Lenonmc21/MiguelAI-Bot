@@ -8,9 +8,10 @@ import { resolve } from 'path';
 // Modo Local (Tu PC):        Lee el archivo desde GOOGLE_APPLICATION_CREDENTIALS en .env.
 if (getApps().length === 0) {
   try {
-    if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+    const cloudJson = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (cloudJson) {
       // NUBE: Credenciales como JSON en variable de entorno
-      const serviceAccount = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+      const serviceAccount = JSON.parse(cloudJson);
       initializeApp({ credential: cert(serviceAccount) });
       console.log('[DB] Firestore conectado via Secret de entorno ✅');
 
