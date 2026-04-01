@@ -52,5 +52,6 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   }
 
   console.log(`[LLM OK] Tokens: ${data.usage?.total_tokens || '?'}`);
+  console.log(`[LLM DEBUG] Respuesta completa:`, JSON.stringify(msg).substring(0, 500));
   return { message: msg };
 }
