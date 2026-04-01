@@ -21,9 +21,11 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
     max_tokens: 1024,
   };
 
+  console.log(`[LLM DEBUG] Primer mensaje:`, JSON.stringify(messages[0]).substring(0, 300));
+  console.log(`[LLM DEBUG] Mensajes enviados:`, messages.length);
+
   if (tools.length > 0) {
     payload.tools = tools;
-    payload.tool_choice = "auto";
   }
 
   console.log(`[LLM] Enviando ${messages.length} mensajes a Groq (${MODEL})...`);
