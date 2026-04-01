@@ -35,7 +35,13 @@ export async function runAgentLoop(userId: number, initialMessage: string): Prom
         });
       } else if (msg.role === 'assistant') {
         const m: any = { role: 'assistant', content: msg.content || '' };
-        if (msg.tool_calls) m.tool_calls = msg.tool_calls;
+        if (msg.tool_calls) {
+          try {
+            m.tool_calls = typeof msg.tool_calls === 'string' ? JSON.parse(msg.tool_calls) : msg.tool_calls;
+          } catch (e) {
+            console.error('Error parsing tool_calls from history', e);
+          }
+        }
         messages.push(m);
       } else if (msg.role === 'user') {
         messages.push({ role: 'user', content: msg.content || '' });
