@@ -17,12 +17,16 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   const payload: any = {
     model: MODEL,
     messages,
+    temperature: 0.7,
+    max_tokens: 1024,
   };
 
   if (tools.length > 0) {
     payload.tools = tools;
     payload.tool_choice = "auto";
   }
+
+  console.log(`[LLM] Enviando ${messages.length} mensajes a Groq (${MODEL})...`);
 
   const response = await fetch(GROQ_URL, {
     method: 'POST',
@@ -35,9 +39,18 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
 
   if (!response.ok) {
     const errorText = await response.text();
+    console.error(`[LLM ERROR] ${response.status}: ${errorText}`);
     throw new Error(`Groq API Error: ${response.status} - ${errorText}`);
   }
 
-  const data = await response.json();
-  return { message: data.choices[0].message };
+  const data: any = await response.json();
+  const msg = data.choices?.[0]?.message;
+
+  if (!msg) {
+    console.error('[LLM ERROR] Respuesta sin message:', JSON.stringify(data).substring(0, 500));
+    return { message: { role: 'assistant', content: 'Error: no recibí respuesta del modelo.' } };
+  }
+
+  console.log(`[LLM OK] Tokens: ${data.usage?.total_tokens || '?'}`);
+  return { message: msg };
 }
