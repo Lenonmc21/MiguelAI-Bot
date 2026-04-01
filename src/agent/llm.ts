@@ -44,6 +44,9 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   }
 
   const data: any = await response.json();
+  
+  console.log(`[LLM DEBUG] Raw response:`, JSON.stringify(data).substring(0, 800));
+  
   const msg = data.choices?.[0]?.message;
 
   if (!msg) {
