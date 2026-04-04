@@ -19,7 +19,7 @@ export async function runAgentLoop(userId: number, initialMessage: string): Prom
   });
 
   for (let i = 0; i < MAX_ITERATIONS; i++) {
-    const history = await getChatHistory(userId, 20);
+    const history = await getChatHistory(userId, 6);
     
     const messages: any[] = [
       { role: 'system', content: SYSTEM_PROMPT }
