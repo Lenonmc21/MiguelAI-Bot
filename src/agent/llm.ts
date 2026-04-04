@@ -28,7 +28,7 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
 
   console.log(`[LLM] Enviando ${messages.length} mensajes a Groq (${MODEL})...`);
 
-  const response = await fetch(GROQ_URL, {
+  let response = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${config.GROQ_API_KEY}`,
@@ -38,9 +38,30 @@ export async function chatCompletion(messages: any[]): Promise<LLMResponse> {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error(`[LLM ERROR] ${response.status}: ${errorText}`);
-    throw new Error(`Groq API Error: ${response.status} - ${errorText}`);
+    if (response.status === 429 && config.OPENROUTER_API_KEY) {
+      console.log('[LLM] Groq Rate Limit (429) detectado. Usando OpenRouter (Fallback)...');
+      const orPayload = { ...payload, model: 'meta-llama/llama-3.1-8b-instruct:free' };
+      
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://github.com/Lenon/MiguelAI',
+          'X-Title': 'MiguelAI'
+        },
+        body: JSON.stringify(orPayload)
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`OpenRouter Fallback Error: ${response.status} - ${errorText}`);
+      }
+    } else {
+      const errorText = await response.text();
+      console.error(`[LLM ERROR] ${response.status}: ${errorText}`);
+      throw new Error(`Groq API Error: ${response.status} - ${errorText}`);
+    }
   }
 
   const data: any = await response.json();
